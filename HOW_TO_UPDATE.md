@@ -1,6 +1,6 @@
 # How to Update PAKRS with New Notes
 
-As you continue using Google Keep, you will naturally save more notes, reels, and videos. To update your local PAKRS database with these new notes, follow these steps.
+As you continue using Google Keep, you will naturally save more notes, reels, and videos. To update your local PAKRS database AND your live Streamlit Cloud website with these new notes, follow these steps.
 
 ## Step 1: Export your new notes
 1. Go to [Google Takeout](https://takeout.google.com/).
@@ -29,16 +29,17 @@ cd /home/kishore/PAKRS
 conda run -n idp env PYTHONPATH=. python ingestion/keep_parser.py
 ```
 
-The script will read the new files, extract the links, and seamlessly insert them into the existing SQLite database.
+The script will read the new files, extract the links, and seamlessly insert them into the existing SQLite database (`data/pakrs.db`).
 
-## Step 4: Restart the App
-Because Streamlit caches the database statistics on startup, it is a good practice to restart the UI so it reflects your latest note count.
+## Step 4: Sync to Streamlit Cloud (Live Website)
+Now that your local `data/pakrs.db` database contains the new notes, you need to push it to your GitHub repository so that Streamlit Cloud can update your live website.
 
-1. Go to your terminal where Streamlit is running.
-2. Stop it by pressing `Ctrl + C`.
-3. Start it again:
-   ```bash
-   conda run -n idp streamlit run app/main.py
-   ```
+Run the following commands in your terminal:
+```bash
+cd /home/kishore/PAKRS
+git add data/pakrs.db
+git commit -m "Added new notes to database"
+git push
+```
 
-Your new notes will now be instantly searchable alongside your old ones!
+**That's it!** Streamlit Cloud is permanently linked to your GitHub repository. The moment you run that `git push` command, Streamlit will detect the new database file, refresh itself in the background, and your live website will instantly show your new notes!
