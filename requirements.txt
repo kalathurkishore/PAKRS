@@ -1,0 +1,6 @@
+streamlit
+faiss-cpu
+sentence-transformers
+easyocr
+openai-whisper
+beautifulsoup4
