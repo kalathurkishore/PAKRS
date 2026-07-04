@@ -12,10 +12,10 @@ from database.db_manager import DBManager
 st.set_page_config(page_title="PAKRS - Personal AI Knowledge Retrieval System", layout="wide", page_icon="🧠")
 
 @st.cache_resource
-def get_db():
+def get_database_manager():
     return DBManager()
 
-db = get_db()
+db = get_database_manager()
 
 def get_youtube_id(url):
     """Extract YouTube video ID from URL."""
