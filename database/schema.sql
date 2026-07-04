@@ -23,7 +23,8 @@ CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
     body,
     labels,
     content='notes',
-    content_rowid='id'
+    content_rowid='id',
+    tokenize='porter'
 );
 
 -- Triggers to keep FTS index updated
