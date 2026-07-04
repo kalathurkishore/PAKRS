@@ -23,7 +23,8 @@ db = get_database_manager()
 
 def get_youtube_id(url):
     """Extract YouTube video ID from URL."""
-    match = re.search(r'(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})', url)
+    # Matches youtube.com/watch?v=, youtu.be/, youtube.com/embed/, youtube.com/shorts/
+    match = re.search(r'(?:v=|/v/|youtu\.be/|/embed/|/shorts/)([^&?/\s]{11})', url)
     return match.group(1) if match else None
 
 st.title("🧠 PAKRS")
@@ -67,7 +68,7 @@ else:
     # Put pagination controls in a nice layout
     col1, col2 = st.columns([1, 4])
     with col1:
-        page_size = st.selectbox("Items per page", options=[10, 20, 30, 50], index=0, on_change=reset_page)
+        page_size = st.selectbox("Items per page", options=[10, 20, 30, 40, 50], index=0, on_change=reset_page)
         
     total_pages = math.ceil(len(results) / page_size) if len(results) > 0 else 1
     
@@ -110,23 +111,17 @@ else:
                         url = link['url']
                         platform = link['platform']
                         
-                        img_html = ""
                         if platform == 'youtube':
                             yt_id = get_youtube_id(url)
                             if yt_id:
-                                img_url = f"https://img.youtube.com/vi/{yt_id}/mqdefault.jpg"
-                                img_html = f'<a href="{url}" target="_blank"><img src="{img_url}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:16/9;" /></a>'
+                                img_url = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+                                st.markdown(f"[![YouTube]({img_url})]({url})")
                             else:
                                 st.markdown(f"🎥 [YouTube Video]({url})")
                         elif platform == 'instagram':
-                            ig_img = "https://placehold.co/320x180/E1306C/FFFFFF?text=Instagram+Post&font=Montserrat"
-                            img_html = f'<a href="{url}" target="_blank"><img src="{ig_img}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:16/9;" /></a>'
+                            st.markdown(f"📸 [Instagram Post]({url})")
                         else:
-                            web_img = "https://placehold.co/320x180/4f4f4f/FFFFFF?text=Web+Link&font=Montserrat"
-                            img_html = f'<a href="{url}" target="_blank"><img src="{web_img}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:16/9;" /></a>'
-                        
-                        if img_html:
-                            st.markdown(img_html, unsafe_allow_html=True)
+                            st.markdown(f"🌐 [Web Link]({url})")
                             
         st.write("") # Spacer between notes
 
