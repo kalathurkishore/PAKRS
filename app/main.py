@@ -71,23 +71,23 @@ except sqlite3.DatabaseError:
             
     dump_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dump.sql')
     if os.path.exists(dump_path):
-        with sqlite3.connect(db.db_path) as conn:
-            with open(dump_path, 'r', encoding='utf-8') as f:
-                sql_script = f.read()
-            try:
+        try:
+            with sqlite3.connect(db.db_path) as conn:
+                with open(dump_path, 'r', encoding='utf-8') as f:
+                    sql_script = f.read()
+                
+                # Proactively fall back to unicode61 for cross-platform compatibility
+                sql_script = sql_script.replace("tokenize='porter'", "tokenize='unicode61'")
+                
                 conn.executescript(sql_script)
-            except sqlite3.OperationalError as e:
-                # Streamlit Cloud's SQLite may lack the 'porter' tokenizer extension
-                if 'tokenizer' in str(e).lower() or 'porter' in str(e).lower():
-                    sql_script = sql_script.replace("tokenize='porter'", "tokenize='unicode61'")
-                    conn.executescript(sql_script)
-                else:
-                    raise
-        time.sleep(1)
-        st.rerun()
+            time.sleep(1)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Fatal error rebuilding from SQL dump: {e}")
+            st.stop()
     else:
         st.error("Error: Could not find SQL dump to rebuild the database.")
-        results = []
+        st.stop()
 
 # Apply Filters
 if selected_labels or selected_platforms:
