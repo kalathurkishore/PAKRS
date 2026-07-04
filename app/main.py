@@ -51,8 +51,16 @@ import sqlite3
 import time
 
 try:
+    with db.get_connection() as conn:
+        note_count = conn.execute("SELECT count(*) FROM notes").fetchone()[0]
+        
+    if note_count == 0 and not st.session_state.get('rebuilt'):
+        st.session_state.rebuilt = True
+        raise sqlite3.DatabaseError("Database is empty")
+        
     results = db.search_notes(search_query) if search_query else db.get_all_notes()
 except sqlite3.DatabaseError:
+    st.session_state.rebuilt = True
     st.warning("Cloud database corruption detected. Rebuilding from portable SQL dump... Please wait.")
     
     if os.path.exists(db.db_path):
