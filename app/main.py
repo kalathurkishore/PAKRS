@@ -47,7 +47,30 @@ all_platforms = db.get_all_platforms()
 selected_labels = st.sidebar.multiselect("Filter by Tags", all_labels)
 selected_platforms = st.sidebar.multiselect("Filter by Platform", all_platforms)
 
-results = db.search_notes(search_query) if search_query else db.get_all_notes()
+import sqlite3
+import time
+
+try:
+    results = db.search_notes(search_query) if search_query else db.get_all_notes()
+except sqlite3.DatabaseError:
+    st.warning("Cloud database corruption detected. Rebuilding from portable SQL dump... Please wait.")
+    
+    if os.path.exists(db.db_path):
+        try:
+            os.remove(db.db_path)
+        except Exception:
+            pass
+            
+    dump_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'dump.sql')
+    if os.path.exists(dump_path):
+        with sqlite3.connect(db.db_path) as conn:
+            with open(dump_path, 'r', encoding='utf-8') as f:
+                conn.executescript(f.read())
+        time.sleep(1)
+        st.rerun()
+    else:
+        st.error("Error: Could not find SQL dump to rebuild the database.")
+        results = []
 
 # Apply Filters
 if selected_labels or selected_platforms:
