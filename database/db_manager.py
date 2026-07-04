@@ -78,8 +78,19 @@ class DBManager:
                 FROM notes_fts f
                 JOIN notes n ON f.rowid = n.rowid
                 WHERE notes_fts MATCH ?
-                ORDER BY rank
+                ORDER BY n.created_at DESC
             ''', (fts_query,))
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_all_notes(self) -> List[Dict[str, Any]]:
+        """Fetch all notes sorted by created_at DESC."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, body, labels, created_at
+                FROM notes
+                ORDER BY created_at DESC
+            ''')
             return [dict(row) for row in cursor.fetchall()]
 
     def get_links_for_note(self, note_id: str) -> List[Dict[str, Any]]:
