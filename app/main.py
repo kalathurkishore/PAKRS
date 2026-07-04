@@ -4,6 +4,7 @@ import sys
 import re
 import math
 import importlib
+from datetime import datetime
 
 # Ensure the database package can be imported
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -83,6 +84,16 @@ else:
     for row in page_results:
         with st.container(border=True):
             st.subheader(f"📄 {row['title'] or 'Untitled Note'}")
+            
+            # Show date if it exists
+            if row.get('created_at'):
+                try:
+                    # SQLite CURRENT_TIMESTAMP format is 'YYYY-MM-DD HH:MM:SS'
+                    dt = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S')
+                    formatted_date = dt.strftime('%B %d, %Y at %I:%M %p')
+                    st.caption(f"🕒 Saved on: {formatted_date}")
+                except Exception:
+                    st.caption(f"🕒 Saved on: {row['created_at']}")
             
             # Show labels if they exist
             if row['labels']:
