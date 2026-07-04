@@ -12,7 +12,7 @@ class KeepParser:
         self.url_pattern = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
     def parse_directory(self, directory_path: str):
-        """Iterates over files in a directory and parses HTML or JSON Keep exports."""
+        """Iterates over files in a directory and parses JSON Keep exports."""
         if not os.path.exists(directory_path):
             print(f"Directory not found: {directory_path}")
             return
@@ -21,10 +21,9 @@ class KeepParser:
             file_path = os.path.join(directory_path, filename)
             if filename.endswith('.json'):
                 self._parse_json_note(file_path)
-            elif filename.endswith('.html'):
-                self._parse_html_note(file_path)
 
     def _parse_json_note(self, file_path: str):
+        import datetime
         with open(file_path, 'r', encoding='utf-8') as f:
             try:
                 data = json.load(f)
@@ -51,11 +50,22 @@ class KeepParser:
         # Deduplicate links
         links = list(set(links))
         
+        # Extract timestamp
+        created_at_str = None
+        timestamp_usec = data.get('userEditedTimestampUsec') or data.get('createdTimestampUsec')
+        if timestamp_usec:
+            try:
+                dt = datetime.datetime.fromtimestamp(timestamp_usec / 1000000.0)
+                created_at_str = dt.strftime('%Y-%m-%d %H:%M:%S')
+            except Exception:
+                pass
+        
         note_data = {
             'title': title,
             'body': body,
             'labels': labels,
-            'links': links
+            'links': links,
+            'created_at': created_at_str
         }
         
         # Filter out empty notes without links
@@ -63,7 +73,6 @@ class KeepParser:
             return
 
         self.db_manager.insert_note(note_data)
-        print(f"Imported JSON note: {title or 'Untitled'}")
 
     def _parse_html_note(self, file_path: str):
         with open(file_path, 'r', encoding='utf-8') as f:

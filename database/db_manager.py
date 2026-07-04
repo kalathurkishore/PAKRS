@@ -31,15 +31,22 @@ class DBManager:
         body = note_data.get('body', '')
         labels = ','.join(note_data.get('labels', []))
         links = note_data.get('links', [])
+        created_at = note_data.get('created_at', None)
         
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
             # Insert Note
-            cursor.execute('''
-                INSERT INTO notes (id, title, body, labels)
-                VALUES (?, ?, ?, ?)
-            ''', (note_id, title, body, labels))
+            if created_at:
+                cursor.execute('''
+                    INSERT INTO notes (id, title, body, labels, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (note_id, title, body, labels, created_at))
+            else:
+                cursor.execute('''
+                    INSERT INTO notes (id, title, body, labels)
+                    VALUES (?, ?, ?, ?)
+                ''', (note_id, title, body, labels))
             
             # Insert Links
             for url in links:
