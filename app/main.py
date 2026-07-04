@@ -43,8 +43,35 @@ if search_query != st.session_state.last_search_query:
     st.session_state.page = 1
     st.session_state.last_search_query = search_query
 
+# Sidebar Filters
+st.sidebar.title("🗂️ Filters")
+all_labels = db.get_all_labels()
+all_platforms = db.get_all_platforms()
+
+selected_labels = st.sidebar.multiselect("Filter by Tags", all_labels)
+selected_platforms = st.sidebar.multiselect("Filter by Platform", all_platforms)
+
 results = db.search_notes(search_query) if search_query else db.get_all_notes()
 
+# Apply Filters
+if selected_labels or selected_platforms:
+    links_map = db.get_all_links_map()
+    filtered_results = []
+    for row in results:
+        if selected_labels:
+            row_labels = [l.strip() for l in row['labels'].split(',')] if row['labels'] else []
+            if not any(l in row_labels for l in selected_labels):
+                continue
+                
+        if selected_platforms:
+            row_links = links_map.get(row['id'], [])
+            row_platforms = [link['platform'] for link in row_links]
+            if not any(p in row_platforms for p in selected_platforms):
+                continue
+                
+        filtered_results.append(row)
+        
+    results = filtered_results
 if not search_query:
     with db.get_connection() as conn:
         cursor = conn.cursor()
@@ -102,8 +129,11 @@ else:
                 st.write("") # padding
             
             # Show the body
-            if row['body']:
-                st.markdown(f"<div style='font-size: 14px; color: #d0d0d0;'>{row['body']}</div>", unsafe_allow_html=True)
+            if 'search_snippet' in row and row['search_snippet']:
+                st.markdown(f"<div style='font-size: 14px; color: #d0d0d0;'>... {row['search_snippet']} ...</div>", unsafe_allow_html=True)
+            elif row['body']:
+                body_preview = row['body'][:300] + "..." if len(row['body']) > 300 else row['body']
+                st.markdown(f"<div style='font-size: 14px; color: #d0d0d0;'>{body_preview}</div>", unsafe_allow_html=True)
             else:
                 st.caption("No text content.")
                 

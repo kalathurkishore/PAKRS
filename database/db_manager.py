@@ -81,7 +81,8 @@ class DBManager:
                 fts_query += '*'
                 
             cursor.execute('''
-                SELECT n.id, n.title, n.body, n.labels, n.created_at
+                SELECT n.id, n.title, n.body, n.labels, n.created_at,
+                       snippet(notes_fts, -1, '<mark style="background-color: #ffd166; color: black; border-radius: 3px; padding: 0 2px;">', '</mark>', '...', 25) as search_snippet
                 FROM notes_fts f
                 JOIN notes n ON f.rowid = n.rowid
                 WHERE notes_fts MATCH ?
@@ -105,3 +106,31 @@ class DBManager:
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM links WHERE note_id = ?', (note_id,))
             return [dict(row) for row in cursor.fetchall()]
+
+    def get_all_links_map(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Fetch all links and group by note_id to prevent N+1 queries."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM links')
+            links_map = {}
+            for row in cursor.fetchall():
+                d = dict(row)
+                links_map.setdefault(d['note_id'], []).append(d)
+            return links_map
+
+    def get_all_labels(self) -> List[str]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT DISTINCT labels FROM notes WHERE labels != ""')
+            all_labels = set()
+            for row in cursor.fetchall():
+                for label in row['labels'].split(','):
+                    if label.strip():
+                        all_labels.add(label.strip())
+            return sorted(list(all_labels))
+
+    def get_all_platforms(self) -> List[str]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT DISTINCT platform FROM links WHERE platform != ""')
+            return sorted([row['platform'] for row in cursor.fetchall()])
