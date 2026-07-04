@@ -3,10 +3,14 @@ import os
 import sys
 import re
 import math
+import importlib
 
 # Ensure the database package can be imported
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Force reload the module to prevent Streamlit from caching old module definitions
+if "database.db_manager" in sys.modules:
+    importlib.reload(sys.modules["database.db_manager"])
 from database.db_manager import DBManager
 
 st.set_page_config(page_title="PAKRS - Personal AI Knowledge Retrieval System", layout="wide", page_icon="🧠")
