@@ -47,7 +47,29 @@ all_platforms = db.get_all_platforms()
 selected_labels = st.sidebar.multiselect("Filter by Tags", all_labels)
 selected_platforms = st.sidebar.multiselect("Filter by Platform", all_platforms)
 
-results = db.search_notes(search_query) if search_query else db.get_all_notes()
+import sqlite3
+
+# Try fetching results; if database is malformed, auto-rebuild it
+try:
+    results = db.search_notes(search_query) if search_query else db.get_all_notes()
+except sqlite3.DatabaseError:
+    st.warning("Database corruption detected. Rebuilding database from source notes... Please wait.")
+    import time
+    
+    if os.path.exists(db.db_path):
+        try:
+            os.remove(db.db_path)
+        except Exception:
+            pass
+            
+    # Rebuild
+    from ingestion.keep_parser import KeepParser
+    parser = KeepParser()
+    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+    parser.parse_directory(data_dir)
+    
+    time.sleep(1)
+    st.rerun()
 
 # Apply Filters
 if selected_labels or selected_platforms:
